@@ -1,0 +1,777 @@
+-- Credits To LeoDicap On The Old V3rmillion For Helping Me A Lot With The Script, He Wants To Keep His Discord Private.
+-- Place Check
+if game.PlaceId ~= 13864667823 then
+	if game.PlaceId == 14775231477 or game.PlaceId == 13864661000 then
+
+	-- Free Gamepasses (LOBBY)
+		local Events = game:GetService("ReplicatedStorage"):WaitForChild("RemoteEvents", 10)
+		if Events then
+			pcall(function()
+				Events.OutsideRole:FireServer("Phone", true, false)
+			end)
+			pcall(function()
+				Events.OutsideRole:FireServer("Book", true, false)
+			end)
+		end
+		for i, v in pairs(game:GetService("Workspace"):GetChildren()) do
+			if v.Name == "Part" and v:FindFirstChild("TouchInterest") then
+				pcall(function()
+					firetouchinterest(v, game:GetService("Players").LocalPlayer.Character.HumanoidRootPart, 0)
+				end)
+			end
+		end
+	else
+		game:GetService("Players").LocalPlayer:Kick("Error! Game Not Supported!")
+	end
+else
+	-- Services
+	local Players = game:GetService("Players")
+	local RunService = game:GetService("RunService")
+	local UserInputService = game:GetService("UserInputService")
+	local TweenService = game:GetService("TweenService")
+	local CoreGui = game:GetService("CoreGui")
+	local Lighting = game:GetService("Lighting")
+	local LocalPlayer = Players.LocalPlayer
+
+	-- Floating Part
+	local Part = Instance.new("Part")
+	Part.Size = Vector3.new(5, 1, 5)
+	Part.Parent = game:GetService("Workspace")
+	Part.Anchored = true
+	Part.Transparency = 1
+
+	-- Locals
+	local Events = game:GetService("ReplicatedStorage"):WaitForChild("Events")
+	local SelectedItem = "Med Kit"
+	local Damage = 5
+	local namecall
+	local ScriptLoaded = false
+	local OriginalWalkspeed = LocalPlayer.Character.Humanoid.WalkSpeed
+	local OriginalJumpPower = LocalPlayer.Character.Humanoid.JumpPower
+	local ModifiedWalkspeed = 50
+	local ModifiedJumpPower = 100
+	local OriginalBrightness = Lighting.Brightness
+	local OriginalFog = Lighting.FogEnd
+	local OriginalShadow = Lighting.GlobalShadows
+	local HailClone = game:GetService("Workspace").Hails:Clone()
+	getgenv().RemoveSlipping = false
+	getgenv().SemiGodmode = false
+
+	-- Remove Slipping Handler
+	local mt = getrawmetatable(game)
+	local old = mt.__namecall
+	setreadonly(mt, false)
+	mt.__namecall = newcclosure(function(self, ...)
+		local args = {...}
+		if getnamecallmethod() == 'FireServer' and self.Name == 'IceSlip' and RemoveSlipping == true then
+			return task.wait(387420489)
+		end
+		return old(self, unpack(args))
+	end)
+
+	-- Semi-Godmode Handler
+	namecall = hookmetamethod(game, "__namecall", function(self, ...)
+		local args = {...}
+		if getnamecallmethod() == 'FireServer' and self.Name == 'Energy' then
+			if SemiGodmode == true then
+				if args[1] < 0 then
+					args[1] = 0
+				end
+			else
+				args[1] = args[1]
+			end
+			return namecall(self, unpack(args))
+		end
+		return namecall(self, ...)
+	end)
+
+	-- Tables
+	local SecretEndingTable = {
+		"HatCollected",
+		"MaskCollected",
+		"CrowbarCollected"
+	}
+
+	local ItemsTable = {
+		"Crowbar 1",
+		"Crowbar 2",
+		"Bat",
+		"Pitchfork",
+		"Hammer",
+		"Wrench",
+		"Broom",
+		"Armor",
+		"Med Kit",
+		"Key",
+		"Gold Key",
+		"Louise",
+		"Lollipop",
+		"Chips",
+		"Golden Apple",
+		"Pizza",
+		"Gold Pizza",
+		"Rainbow Pizza",
+		"Rainbow Pizza Box",
+		"Book",
+		"Phone",
+		"Cookie",
+		"Apple",
+		"Bloxy Cola",
+		"Expired Bloxy Cola",
+		"Bottle",
+		"Ladder",
+		"Battery"
+	}
+
+	-- Functions
+	local function Notify(name, content, image, time)
+		pcall(function()
+			game:GetService("StarterGui"):SetCore("SendNotification", {
+				Title = name,
+				Text = content,
+				Icon = image,
+				Duration = time
+			})
+		end)
+	end
+
+	local function Delete(Instance)
+		pcall(function()
+			Events:WaitForChild("OnDoorHit"):FireServer(Instance)
+		end)
+	end
+
+	local function UnequipAllTools()
+		for i, v in pairs(LocalPlayer.Character:GetChildren()) do
+			if v:IsA("Tool") then
+				v.Parent = LocalPlayer.Backpack
+			end
+		end
+	end
+
+	local function EquipAllTools()
+		for i, v in pairs(LocalPlayer.Backpack:GetChildren()) do
+			if v:IsA("Tool") then
+				v.Parent = LocalPlayer.Character
+			end
+		end
+	end
+
+	local function GiveItem(Item)
+		if Item == "Armor" then
+			Events:WaitForChild("Vending"):FireServer(3, "Armor2", "Armor", tostring(LocalPlayer), 1)
+		elseif Item == "Crowbar 1" or Item == "Crowbar 2" or Item == "Bat" or Item == "Pitchfork" or Item == "Hammer" or Item == "Wrench" or Item == "Broom" then
+			Events.Vending:FireServer(3, tostring(Item:gsub(" ", "")), "Weapons", LocalPlayer.Name, 1)
+		else
+			Events:WaitForChild("GiveTool"):FireServer(tostring(Item:gsub(" ", "")))
+		end
+	end
+
+	local function GetBestTool()
+		for i, v in pairs(game:GetService("Players").LocalPlayer.PlayerGui.Assets.Note.Note.Note:GetChildren()) do
+			if v.Name:match("Circle") and v.Visible == true then
+				GiveItem(tostring(v.Name:gsub("Circle", "")))
+			end
+		end
+	end
+
+	local function Train(Ability)
+		Events:WaitForChild("RainbowWhatStat"):FireServer(Ability)
+	end
+
+	local function TakeDamage(Amount)
+		Events:WaitForChild("Energy"):FireServer(-Amount, false, false)
+	end
+
+	local function TeleportTo(CFrameArg)
+		LocalPlayer.Character.HumanoidRootPart.CFrame = CFrameArg
+	end
+
+	local function GiveAll()
+		GetBestTool()
+		task.wait(.1)
+		GiveItem("Armor")
+		task.wait(.1)
+		for i = 1, 5 do
+			Train("Speed")
+			Train("Strength")
+		end
+		task.wait(.1)
+		UnequipAllTools()
+		for i = 1, 15 do
+			GiveItem("Gold Pizza")
+			task.wait(0.05)
+		end
+	end
+
+	local function HealAllPlayers()
+		UnequipAllTools()
+		task.wait(.2)
+		GiveItem("Golden Apple")
+		task.wait(.5)
+		LocalPlayer.Backpack:WaitForChild("GoldenApple").Parent = LocalPlayer.Character
+		task.wait(.5)
+		Events:WaitForChild("HealTheNoobs"):FireServer()
+	end
+
+	local function HealYourself()
+		GiveItem("Pizza")
+		Events.Energy:FireServer(25, "Pizza")
+	end
+
+	local function BreakBarricades()
+		for i, v in pairs(game:GetService("Workspace").FallenTrees:GetChildren()) do
+			for i = 1, 20 do
+				if v:FindFirstChild("TreeHitPart") then
+					Events.RoadMissionEvent:FireServer(1, v.TreeHitPart, 5)
+				end
+			end
+		end
+	end
+
+	local function BreakEnemies()
+		pcall(function()
+			for i, v in pairs(game:GetService("Workspace").BadGuys:GetChildren()) do
+				v:FindFirstChild("Humanoid", true).Health = 0
+			end
+			for i, v in pairs(game:GetService("Workspace").BadGuysBoss:GetChildren()) do
+				v:FindFirstChild("Humanoid", true).Health = 0
+			end
+			for i, v in pairs(game:GetService("Workspace").BadGuysFront:GetChildren()) do
+				v:FindFirstChild("Humanoid", true).Health = 0
+			end
+		end)
+	end
+
+	local function KillEnemies()
+		pcall(function()
+			for i, v in pairs(game:GetService("Workspace").BadGuys:GetChildren()) do
+				Events:WaitForChild("HitBadguy"):FireServer(v, 64.8, 4)
+			end
+			for i, v in pairs(game:GetService("Workspace").BadGuysBoss:GetChildren()) do
+				Events:WaitForChild("HitBadguy"):FireServer(v, 64.8, 4)
+			end
+			for i, v in pairs(game:GetService("Workspace").BadGuysFront:GetChildren()) do
+				Events:WaitForChild("HitBadguy"):FireServer(v, 64.8, 4)
+			end
+			if game:GetService("Workspace"):FindFirstChild("BadGuyPizza", true) then
+				Events:WaitForChild("HitBadguy"):FireServer(game:GetService("Workspace"):FindFirstChild("BadGuyPizza", true), 64.8, 4)
+			end
+			if game:GetService("Workspace"):FindFirstChild("BadGuyBrute") then
+				Events:WaitForChild("HitBadguy"):FireServer(game:GetService("Workspace").BadGuyBrute, 64.8, 4)
+			end
+		end)
+	end
+
+	local function GetDog()
+		for i, v in pairs(game:GetService("Players").LocalPlayer.PlayerGui.Assets.Note.Note.Note:GetChildren()) do
+			if v.Name:match("Circle") and v.Visible == true then
+				GiveItem(tostring(v.Name:gsub("Circle", "")))
+				task.wait(.1)
+				LocalPlayer.Backpack:WaitForChild(tostring(v.Name:gsub("Circle", ""))).Parent = LocalPlayer.Character
+				TeleportTo(CFrame.new(-257.56839, 29.4499969, -910.452637, -0.238445505, 7.71292363e-09, 0.971155882, 1.2913591e-10, 1, -7.91029819e-09, -0.971155882, -1.76076387e-09, -0.238445505))
+				task.wait(.5)
+				Events:WaitForChild("CatFed"):FireServer(tostring(v.Name:gsub("Circle", "")))
+			end
+		end
+		task.wait(2)
+		for i = 1, 3 do
+			TeleportTo(CFrame.new(-203.533081, 30.4500484, -790.901428, -0.0148558766, 8.85941187e-09, -0.999889672, 2.65695732e-08, 1, 8.46563175e-09, 0.999889672, -2.64408779e-08, -0.0148558766) + Vector3.new(0, 5, 0))
+			task.wait(.1)
+		end
+	end
+
+	local function GetAgent()
+		GiveItem("Louise")
+		task.wait(.1)
+		LocalPlayer.Backpack:WaitForChild("Louise").Parent = LocalPlayer.Character
+		Events:WaitForChild("LouiseGive"):FireServer(2)
+	end
+
+	local function GetUncle()
+		GiveItem("Key")
+		task.wait(.1)
+		LocalPlayer.Backpack:WaitForChild("Key").Parent = LocalPlayer.Character
+		wait(.5)
+		Events.KeyEvent:FireServer()
+	end
+
+	local function ClickPete()
+		fireclickdetector(game:GetService("Workspace").UnclePete.ClickDetector)
+	end
+
+	local function CollectCash()
+		for i, v in pairs(game:GetService("Workspace"):GetChildren()) do
+			if v.Name == "Part" and v:FindFirstChild("TouchInterest") and v:FindFirstChild("Weld") and v.Transparency == 1 then
+				firetouchinterest(v, LocalPlayer.Character.HumanoidRootPart, 0)
+			end
+		end
+	end
+
+	local function GetAllOutsideItems()
+		TeleportTo(CFrame.new(-199.240555, 30.0009422, -790.182739, 0.08340507, 2.48169538e-08, 0.996515751, -2.7112752e-09, 1, -2.46767993e-08, -0.996515751, -6.43658127e-10, 0.08340507))
+		for i, v in pairs(game:GetService("Workspace").OutsideParts:GetChildren()) do
+			fireclickdetector(v.ClickDetector)
+		end
+		LocalPlayer.Character.Humanoid:MoveTo(LocalPlayer.Character.HumanoidRootPart.Position + Vector3.new(-10, 0, 0))
+	end
+
+	local function BringAllEnemies()
+		pcall(function()
+			for i, v in pairs(game:GetService("Workspace").BadGuys:GetChildren()) do
+				v.HumanoidRootPart.Anchored = true
+				v.HumanoidRootPart.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -4)
+			end
+			for i, v in pairs(game:GetService("Workspace").BadGuysBoss:GetChildren()) do
+				v.HumanoidRootPart.Anchored = true
+				v.HumanoidRootPart.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -4)
+			end
+			for i, v in pairs(game:GetService("Workspace").BadGuysFront:GetChildren()) do
+				v.HumanoidRootPart.Anchored = true
+				v.HumanoidRootPart.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -4)
+			end
+		end)
+	end
+
+	local function Noclip(State)
+		LocalPlayer.Character.HumanoidRootPart.CanCollide = State
+		for i, v in pairs(LocalPlayer.Character:GetChildren()) do
+			if v:IsA("MeshPart") then
+				v.CanCollide = State
+			end
+		end
+	end
+
+	local function GetSecretEnding()
+		for i, v in next, SecretEndingTable do
+			Events.LarryEndingEvent:FireServer(v, true)
+		end
+	end
+
+	local function GetGAppleBadge()
+		if game:GetService("Workspace"):FindFirstChild("FallenTrees") then
+			for i, v in pairs(game:GetService("Workspace").FallenTrees:GetChildren()) do
+				for i = 1, 20 do
+					if v:FindFirstChild("TreeHitPart") then
+						Events.RoadMissionEvent:FireServer(1, v.TreeHitPart, 5)
+					end
+				end
+			end
+			task.wait(1)
+			TeleportTo(CFrame.new(61.8781624, 29.4499969, -534.381165, -0.584439218, -1.05103076e-07, 0.811437488, -3.12853778e-08, 1, 1.06993674e-07, -0.811437488, 3.71451705e-08, -0.584439218))
+			task.wait(.5)
+			fireclickdetector(game:GetService("Workspace").GoldenApple.ClickDetector)
+		else
+			Notify("Error", "Golden Apple Has Not Spawned Yet, Please Wait Until the First Wave.", 'rbxassetid://4483345998', 3)
+		end
+	end
+
+	local function AntiMud(Touchable)
+		for i, v in pairs(game:GetService("Workspace").BogArea.Bog:GetDescendants()) do
+			if v.Name == "Mud" and v:IsA("Part") then
+				if Touchable == true then
+					v.CanTouch = false
+				else
+					v.CanTouch = false
+				end
+			end
+		end
+	end
+
+	local function SSAntiWind()
+		if game:GetService("Workspace"):FindFirstChild("WavePart") then
+			Delete(game:GetService("Workspace").WavePart)
+		end
+	end
+
+	local function AntiWind()
+		if game:GetService("Workspace"):FindFirstChild("WavePart") then
+			game:GetService("Workspace").WavePart.CanTouch = false
+		end
+	end
+
+	-- ============================================================
+	-- GUI
+	-- ============================================================
+
+	-- Cleanup old
+	pcall(function()
+		if CoreGui:FindFirstChild("BreakingBlitzUI") then
+			CoreGui.BreakingBlitzUI:Destroy()
+		end
+	end)
+
+	local ScreenGui = Instance.new("ScreenGui")
+	ScreenGui.Name = "BreakingBlitzUI"
+	ScreenGui.ResetOnSpawn = false
+	ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+	ScreenGui.IgnoreGuiInset = true
+	pcall(function()
+		ScreenGui.Parent = CoreGui
+	end)
+	if not ScreenGui.Parent then
+		ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+	end
+
+	-- Theme
+	local Theme = {
+		Background = Color3.fromRGB(15, 15, 20),
+		Panel = Color3.fromRGB(22, 22, 30),
+		Panel2 = Color3.fromRGB(30, 30, 40),
+		Accent = Color3.fromRGB(130, 80, 255),
+		Accent2 = Color3.fromRGB(80, 180, 255),
+		Text = Color3.fromRGB(240, 240, 245),
+		SubText = Color3.fromRGB(150, 150, 165),
+		Stroke = Color3.fromRGB(45, 45, 60),
+		Green = Color3.fromRGB(80, 220, 140),
+		Red = Color3.fromRGB(255, 90, 90)
+	}
+
+	-- Gradient helper
+	local function makeGradient(parent, c1, c2)
+		local g = Instance.new("UIGradient")
+		g.Color = ColorSequence.new(c1, c2)
+		g.Rotation = 45
+		g.Parent = parent
+		return g
+	end
+
+	-- ====== FLOATING ICON ======
+	local IconSize = 56
+	local Icon = Instance.new("Frame")
+	Icon.Name = "FloatingIcon"
+	Icon.Size = UDim2.new(0, IconSize, 0, IconSize)
+	Icon.Position = UDim2.new(0, 30, 0, 30)
+	Icon.BackgroundColor3 = Theme.Background
+	Icon.BorderSizePixel = 0
+	Icon.ClipsDescendants = false
+	Icon.Active = true
+	Icon.Draggable = false
+	Icon.Parent = ScreenGui
+
+	local IconCorner = Instance.new("UICorner")
+	IconCorner.CornerRadius = UDim.new(1, 0)
+	IconCorner.Parent = Icon
+
+	local IconStroke = Instance.new("UIStroke")
+	IconStroke.Thickness = 2
+	IconStroke.Color = Theme.Accent
+	IconStroke.Transparency = 0.2
+	IconStroke.Parent = Icon
+
+	local IconGradient = makeGradient(Icon, Theme.Accent, Theme.Accent2)
+
+	local IconGlow = Instance.new("ImageLabel")
+	IconGlow.Name = "Glow"
+	IconGlow.Size = UDim2.new(1, 20, 1, 20)
+	IconGlow.Position = UDim2.new(0, -10, 0, -10)
+	IconGlow.BackgroundTransparency = 1
+	IconGlow.Image = "rbxassetid://5028857084"
+	IconGlow.ImageColor3 = Theme.Accent
+	IconGlow.ImageTransparency = 0.5
+	IconGlow.ZIndex = 0
+	IconGlow.Parent = Icon
+
+	local IconLabel = Instance.new("TextLabel")
+	IconLabel.Size = UDim2.new(1, 0, 1, 0)
+	IconLabel.BackgroundTransparency = 1
+	IconLabel.Text = "BB"
+	IconLabel.Font = Enum.Font.GothamBlack
+	IconLabel.TextSize = 22
+	IconLabel.TextColor3 = Theme.Text
+	IconLabel.TextTransparency = 0
+	IconLabel.ZIndex = 2
+	IconLabel.Parent = Icon
+
+	local IconPulse = Instance.new("Frame")
+	IconPulse.Size = UDim2.new(1, 0, 1, 0)
+	IconPulse.BackgroundColor3 = Theme.Accent
+	IconPulse.BackgroundTransparency = 1
+	IconPulse.ZIndex = 0
+	IconPulse.Parent = Icon
+	local IconPulseCorner = Instance.new("UICorner")
+	IconPulseCorner.CornerRadius = UDim.new(1, 0)
+	IconPulseCorner.Parent = IconPulse
+
+	-- Pulse animation
+	task.spawn(function()
+		while Icon.Parent do
+			IconPulse.BackgroundTransparency = 0.7
+			IconPulse.Size = UDim2.new(1, 0, 1, 0)
+			TweenService:Create(IconPulse, TweenInfo.new(1.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+				Size = UDim2.new(1, 40, 1, 40),
+				BackgroundTransparency = 1
+			}):Play()
+			task.wait(1.4)
+		end
+	end)
+
+	-- ====== MAIN WINDOW ======
+	local Window = Instance.new("Frame")
+	Window.Name = "Window"
+	Window.Size = UDim2.new(0, 560, 0, 380)
+	Window.Position = UDim2.new(0.5, -280, 0.5, -190)
+	Window.BackgroundColor3 = Theme.Background
+	Window.BorderSizePixel = 0
+	Window.ClipsDescendants = true
+	Window.Visible = false
+	Window.Parent = ScreenGui
+
+	local WindowCorner = Instance.new("UICorner")
+	WindowCorner.CornerRadius = UDim.new(0, 12)
+	WindowCorner.Parent = Window
+
+	local WindowStroke = Instance.new("UIStroke")
+	WindowStroke.Thickness = 1.5
+	WindowStroke.Color = Theme.Stroke
+	WindowStroke.Parent = Window
+
+	local WindowGradient = makeGradient(Window, Color3.fromRGB(20, 20, 28), Color3.fromRGB(12, 12, 18))
+
+	-- Subtle top accent bar
+	local TopAccent = Instance.new("Frame")
+	TopAccent.Size = UDim2.new(1, 0, 0, 3)
+	TopAccent.BackgroundColor3 = Theme.Accent
+	TopAccent.BorderSizePixel = 0
+	TopAccent.ZIndex = 5
+	TopAccent.Parent = Window
+	makeGradient(TopAccent, Theme.Accent, Theme.Accent2)
+
+	-- ====== HEADER ======
+	local Header = Instance.new("Frame")
+	Header.Name = "Header"
+	Header.Size = UDim2.new(1, 0, 0, 44)
+	Header.BackgroundColor3 = Theme.Panel
+	Header.BackgroundTransparency = 0.2
+	Header.BorderSizePixel = 0
+	Header.ZIndex = 5
+	Header.Parent = Window
+
+	local HeaderCorner = Instance.new("UICorner")
+	HeaderCorner.CornerRadius = UDim.new(0, 12)
+	HeaderCorner.Parent = Header
+
+	local HeaderCover = Instance.new("Frame")
+	HeaderCover.Size = UDim2.new(1, 0, 0, 12)
+	HeaderCover.Position = UDim2.new(0, 0, 1, -12)
+	HeaderCover.BackgroundColor3 = Theme.Panel
+	HeaderCover.BackgroundTransparency = 0.2
+	HeaderCover.BorderSizePixel = 0
+	HeaderCover.ZIndex = 5
+	HeaderCover.Parent = Header
+
+	local Title = Instance.new("TextLabel")
+	Title.Size = UDim2.new(0, 200, 1, 0)
+	Title.Position = UDim2.new(0, 18, 0, 0)
+	Title.BackgroundTransparency = 1
+	Title.Text = "BREAKING BLITZ"
+	Title.Font = Enum.Font.GothamBlack
+	Title.TextSize = 15
+	Title.TextColor3 = Theme.Text
+	Title.TextXAlignment = Enum.TextXAlignment.Left
+	Title.ZIndex = 6
+	Title.Parent = Header
+
+	local TitleAccent = Instance.new("Frame")
+	TitleAccent.Size = UDim2.new(0, 3, 0, 16)
+	TitleAccent.Position = UDim2.new(0, 10, 0.5, -8)
+	TitleAccent.BackgroundColor3 = Theme.Accent
+	TitleAccent.BorderSizePixel = 0
+	TitleAccent.ZIndex = 6
+	TitleAccent.Parent = Header
+	makeGradient(TitleAccent, Theme.Accent, Theme.Accent2)
+
+	-- Window controls
+	local function makeHeaderBtn(xOffset, symbol, hoverColor)
+		local btn = Instance.new("TextButton")
+		btn.Size = UDim2.new(0, 28, 0, 28)
+		btn.Position = UDim2.new(1, xOffset, 0.5, -14)
+		btn.BackgroundColor3 = Theme.Panel2
+		btn.BackgroundTransparency = 0.3
+		btn.Text = symbol
+		btn.Font = Enum.Font.GothamBold
+		btn.TextSize = 16
+		btn.TextColor3 = Theme.SubText
+		btn.AutoButtonColor = false
+		btn.ZIndex = 6
+		btn.Parent = Header
+		local c = Instance.new("UICorner")
+		c.CornerRadius = UDim.new(0, 8)
+		c.Parent = btn
+		btn.MouseEnter:Connect(function()
+			TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundColor3 = hoverColor, TextColor3 = Theme.Text}):Play()
+		end)
+		btn.MouseLeave:Connect(function()
+			TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundColor3 = Theme.Panel2, TextColor3 = Theme.SubText}):Play()
+		end)
+		return btn
+	end
+
+	local CloseBtn = makeHeaderBtn(-38, "✕", Theme.Red)
+	local MinimizeBtn = makeHeaderBtn(-70, "—", Theme.Accent2)
+
+	-- ====== SIDEBAR ======
+	local Sidebar = Instance.new("Frame")
+	Sidebar.Name = "Sidebar"
+	Sidebar.Size = UDim2.new(0, 150, 1, -44)
+	Sidebar.Position = UDim2.new(0, 0, 0, 44)
+	Sidebar.BackgroundColor3 = Theme.Panel
+	Sidebar.BackgroundTransparency = 0.5
+	Sidebar.BorderSizePixel = 0
+	Sidebar.ZIndex = 4
+	Sidebar.Parent = Window
+
+	local SidebarLayout = Instance.new("UIListLayout")
+	SidebarLayout.Padding = UDim.new(0, 4)
+	SidebarLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	SidebarLayout.Parent = Sidebar
+
+	local SidebarPad = Instance.new("UIPadding")
+	SidebarPad.PaddingTop = UDim.new(0, 12)
+	SidebarPad.PaddingLeft = UDim.new(0, 8)
+	SidebarPad.PaddingRight = UDim.new(0, 8)
+	SidebarPad.Parent = Sidebar
+
+	-- ====== CONTENT ======
+	local Content = Instance.new("Frame")
+	Content.Name = "Content"
+	Content.Size = UDim2.new(1, -150, 1, -44)
+	Content.Position = UDim2.new(0, 150, 0, 44)
+	Content.BackgroundTransparency = 1
+	Content.ClipsDescendants = true
+	Content.ZIndex = 4
+	Content.Parent = Window
+
+	-- Title strip inside content
+	local ContentTitle = Instance.new("TextLabel")
+	ContentTitle.Size = UDim2.new(1, -24, 0, 30)
+	ContentTitle.Position = UDim2.new(0, 16, 0, 12)
+	ContentTitle.BackgroundTransparency = 1
+	ContentTitle.Text = "MAIN"
+	ContentTitle.Font = Enum.Font.GothamBold
+	ContentTitle.TextSize = 13
+	ContentTitle.TextColor3 = Theme.SubText
+	ContentTitle.TextXAlignment = Enum.TextXAlignment.Left
+	ContentTitle.ZIndex = 5
+	ContentTitle.Parent = Content
+
+	local ContentDivider = Instance.new("Frame")
+	ContentDivider.Size = UDim2.new(1, -32, 0, 1)
+	ContentDivider.Position = UDim2.new(0, 16, 0, 42)
+	ContentDivider.BackgroundColor3 = Theme.Stroke
+	ContentDivider.BorderSizePixel = 0
+	ContentDivider.ZIndex = 5
+	ContentDivider.Parent = Content
+
+	-- Scrolling frame for buttons
+	local Scroll = Instance.new("ScrollingFrame")
+	Scroll.Size = UDim2.new(1, -16, 1, -56)
+	Scroll.Position = UDim2.new(0, 8, 0, 50)
+	Scroll.BackgroundTransparency = 1
+	Scroll.BorderSizePixel = 0
+	Scroll.ScrollBarThickness = 4
+	Scroll.ScrollBarImageColor3 = Theme.Accent
+	Scroll.ScrollBarImageTransparency = 0.3
+	Scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+	Scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	Scroll.ZIndex = 5
+	Scroll.Parent = Content
+
+	local ScrollLayout = Instance.new("UIListLayout")
+	ScrollLayout.Padding = UDim.new(0, 6)
+	ScrollLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	ScrollLayout.Parent = Scroll
+
+	local ScrollPad = Instance.new("UIPadding")
+	ScrollPad.PaddingTop = UDim.new(0, 4)
+	ScrollPad.PaddingLeft = UDim.new(0, 8)
+	ScrollPad.PaddingRight = UDim.new(0, 8)
+	ScrollPad.PaddingBottom = UDim.new(0, 8)
+	ScrollPad.Parent = Scroll
+
+	-- ====== TAB SYSTEM ======
+	local Tabs = {}
+	local TabButtons = {}
+	local CurrentTab = nil
+
+	local function makeTabButton(name, order)
+		local btn = Instance.new("TextButton")
+		btn.Name = name
+		btn.Size = UDim2.new(1, 0, 0, 32)
+		btn.BackgroundColor3 = Theme.Panel2
+		btn.BackgroundTransparency = 1
+		btn.Text = ""
+		btn.AutoButtonColor = false
+		btn.LayoutOrder = order
+		btn.ZIndex = 5
+		btn.Parent = Sidebar
+
+		local c = Instance.new("UICorner")
+		c.CornerRadius = UDim.new(0, 8)
+		c.Parent = btn
+
+		local label = Instance.new("TextLabel")
+		label.Size = UDim2.new(1, -16, 1, 0)
+		label.Position = UDim2.new(0, 16, 0, 0)
+		label.BackgroundTransparency = 1
+		label.Text = name
+		label.Font = Enum.Font.GothamMedium
+		label.TextSize = 12
+		label.TextColor3 = Theme.SubText
+		label.TextXAlignment = Enum.TextXAlignment.Left
+		label.ZIndex = 6
+		label.Parent = btn
+
+		local indicator = Instance.new("Frame")
+		indicator.Size = UDim2.new(0, 3, 0, 0)
+		indicator.Position = UDim2.new(0, 6, 0.5, 0)
+		indicator.BackgroundColor3 = Theme.Accent
+		indicator.BorderSizePixel = 0
+		indicator.ZIndex = 7
+		indicator.Parent = btn
+		local ic = Instance.new("UICorner")
+		ic.CornerRadius = UDim.new(1, 0)
+		ic.Parent = indicator
+		makeGradient(indicator, Theme.Accent, Theme.Accent2)
+
+		TabButtons[name] = {button = btn, label = label, indicator = indicator}
+		return btn
+	end
+
+	local function selectTab(name)
+		if CurrentTab == name then return end
+		for n, data in pairs(TabButtons) do
+			if n == name then
+				TweenService:Create(data.button, TweenInfo.new(0.25), {BackgroundTransparency = 0.2, BackgroundColor3 = Theme.Panel2}):Play()
+				TweenService:Create(data.label, TweenInfo.new(0.25), {TextColor3 = Theme.Text}):Play()
+				TweenService:Create(data.indicator, TweenInfo.new(0.25), {Size = UDim2.new(0, 3, 0, 18)}):Play()
+			else
+				TweenService:Create(data.button, TweenInfo.new(0.25), {BackgroundTransparency = 1}):Play()
+				TweenService:Create(data.label, TweenInfo.new(0.25), {TextColor3 = Theme.SubText}):Play()
+				TweenService:Create(data.indicator, TweenInfo.new(0.25), {Size = UDim2.new(0, 3, 0, 0)}):Play()
+			end
+		end
+		CurrentTab = name
+		ContentTitle.Text = string.upper(name)
+
+		-- Switch visible page
+		for n, page in pairs(Tabs) do
+			page.Visible = (n == name)
+		end
+	end
+
+	local function createPage(name)
+		local page = Instance.new("Frame")
+		page.Name = name .. "Page"
+		page.Size = UDim2.new(1, 0, 1, 0)
+		page.BackgroundTransparency = 1
+		page.Visible = false
+		page.ZIndex = 5
+		page.Parent = Scroll
+
+		local layout = Instance.new("UIListLayout")
+		layout.Padding = UDim.new(0, 6)
+		layout.SortOrder = Enum.SortOrder.LayoutOrder
+		layout.Parent = page
+
+		Tabs[name
