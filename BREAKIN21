@@ -394,7 +394,6 @@ else
 	-- GUI
 	-- ============================================================
 
-	-- Cleanup old
 	pcall(function()
 		if CoreGui:FindFirstChild("BreakingBlitzUI") then
 			CoreGui.BreakingBlitzUI:Destroy()
@@ -427,7 +426,6 @@ else
 		Red = Color3.fromRGB(255, 90, 90)
 	}
 
-	-- Gradient helper
 	local function makeGradient(parent, c1, c2)
 		local g = Instance.new("UIGradient")
 		g.Color = ColorSequence.new(c1, c2)
@@ -446,7 +444,6 @@ else
 	Icon.BorderSizePixel = 0
 	Icon.ClipsDescendants = false
 	Icon.Active = true
-	Icon.Draggable = false
 	Icon.Parent = ScreenGui
 
 	local IconCorner = Instance.new("UICorner")
@@ -459,7 +456,7 @@ else
 	IconStroke.Transparency = 0.2
 	IconStroke.Parent = Icon
 
-	local IconGradient = makeGradient(Icon, Theme.Accent, Theme.Accent2)
+	makeGradient(Icon, Theme.Accent, Theme.Accent2)
 
 	local IconGlow = Instance.new("ImageLabel")
 	IconGlow.Name = "Glow"
@@ -479,7 +476,6 @@ else
 	IconLabel.Font = Enum.Font.GothamBlack
 	IconLabel.TextSize = 22
 	IconLabel.TextColor3 = Theme.Text
-	IconLabel.TextTransparency = 0
 	IconLabel.ZIndex = 2
 	IconLabel.Parent = Icon
 
@@ -493,7 +489,6 @@ else
 	IconPulseCorner.CornerRadius = UDim.new(1, 0)
 	IconPulseCorner.Parent = IconPulse
 
-	-- Pulse animation
 	task.spawn(function()
 		while Icon.Parent do
 			IconPulse.BackgroundTransparency = 0.7
@@ -526,9 +521,8 @@ else
 	WindowStroke.Color = Theme.Stroke
 	WindowStroke.Parent = Window
 
-	local WindowGradient = makeGradient(Window, Color3.fromRGB(20, 20, 28), Color3.fromRGB(12, 12, 18))
+	makeGradient(Window, Color3.fromRGB(20, 20, 28), Color3.fromRGB(12, 12, 18))
 
-	-- Subtle top accent bar
 	local TopAccent = Instance.new("Frame")
 	TopAccent.Size = UDim2.new(1, 0, 0, 3)
 	TopAccent.BackgroundColor3 = Theme.Accent
@@ -581,7 +575,6 @@ else
 	TitleAccent.Parent = Header
 	makeGradient(TitleAccent, Theme.Accent, Theme.Accent2)
 
-	-- Window controls
 	local function makeHeaderBtn(xOffset, symbol, hoverColor)
 		local btn = Instance.new("TextButton")
 		btn.Size = UDim2.new(0, 28, 0, 28)
@@ -642,7 +635,6 @@ else
 	Content.ZIndex = 4
 	Content.Parent = Window
 
-	-- Title strip inside content
 	local ContentTitle = Instance.new("TextLabel")
 	ContentTitle.Size = UDim2.new(1, -24, 0, 30)
 	ContentTitle.Position = UDim2.new(0, 16, 0, 12)
@@ -663,7 +655,6 @@ else
 	ContentDivider.ZIndex = 5
 	ContentDivider.Parent = Content
 
-	-- Scrolling frame for buttons
 	local Scroll = Instance.new("ScrollingFrame")
 	Scroll.Size = UDim2.new(1, -16, 1, -56)
 	Scroll.Position = UDim2.new(0, 8, 0, 50)
@@ -753,8 +744,6 @@ else
 		end
 		CurrentTab = name
 		ContentTitle.Text = string.upper(name)
-
-		-- Switch visible page
 		for n, page in pairs(Tabs) do
 			page.Visible = (n == name)
 		end
@@ -763,7 +752,8 @@ else
 	local function createPage(name)
 		local page = Instance.new("Frame")
 		page.Name = name .. "Page"
-		page.Size = UDim2.new(1, 0, 1, 0)
+		page.Size = UDim2.new(1, 0, 0, 0)
+		page.AutomaticSize = Enum.AutomaticSize.Y
 		page.BackgroundTransparency = 1
 		page.Visible = false
 		page.ZIndex = 5
@@ -774,4 +764,12 @@ else
 		layout.SortOrder = Enum.SortOrder.LayoutOrder
 		layout.Parent = page
 
-		Tabs[name
+		Tabs[name] = page
+		return page
+	end
+
+	-- ====== UI ELEMENT HELPERS ======
+	local function makeButton(parent, text, callback)
+		local btn = Instance.new("TextButton")
+		btn.Size = UDim2.new(1, 0, 0, 34)
+	
